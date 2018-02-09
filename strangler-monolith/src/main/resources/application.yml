@@ -1,0 +1,13 @@
+server:
+  port: 10080
+  session:
+    cookie:
+      name: MONOSID
+      http-only: true
+spring:
+  application:
+    name: Strangler Monolith
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp

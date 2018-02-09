@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Strangler Web Components</title>
+  </head>
+  <body>
+    <div id="strangler-message-component"
+         data-server-base-url="http://localhost:8080/strangler-microservice/v1">
+    </div>
+    <div id="strangler-greeting-component"
+         data-server-base-url="http://localhost:8080/strangler-microservice/v1"
+         data-monolith-session-cookie-name="MONOSID"
+         data-monolith-session-cookie-value="1234567890">
+    </div>
+    <!-- built files will be auto injected -->
+  </body>
+</html>
