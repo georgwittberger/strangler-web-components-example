@@ -1,6 +1,6 @@
 = Strangler Web Components Example
 Georg Wittberger <georg.wittberger@gmail.com>
-v1.0.1, 2018-02-10
+v1.0.2, 2018-06-10
 
 This repository provides an example project to demonstrate how business functionality from a microservice can be attached to web pages of a monolith by leveraging web components (or similar technology).
 
@@ -18,7 +18,7 @@ In this example project we use the following technologies:
 
 * https://projects.spring.io/spring-boot/[Spring Boot]  + https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html[Spring MVC]  for server-side implementation of the monolith and microservice
 * https://en.wikipedia.org/wiki/JavaServer_Pages[JSP]  for server-side rendering of web pages in the monolith
-* https://vuejs.org/[Vue.js] for implementation of the web components in the microservice
+* https://vuejs.org/[Vue.js] + https://cli.vuejs.org/[Vue CLI] for implementation of the web components in the microservice
 * http://maven.apache.org/[Maven] as build tool for packaging and running the monolith and microservice
 
 == Project Structure
@@ -40,7 +40,7 @@ The internal application configuration is located the file `src/main/resources/a
 
 In the directory `src/main/web-component` there is a self-contained NPM sub-project for the web components provided by the microservice.
 
-The web components project contains a sub-directory `dist` which comprises the compiled and bundled JavaScript and Stylesheet files. Those files are copied as static resources to the Spring Boot application during the Maven build (see the `maven-resources-plugin` execution in `pom.xml`).
+The web components project has a sub-directory `dist` which contains the final JavaScript bundle. This bundle file is copied as static resource to the Spring Boot application during the Maven build (see the `maven-resources-plugin` execution in `pom.xml`).
 
 === Strangler Monolith
 
@@ -94,33 +94,26 @@ The microservice provides two things to enable an easy integration of its genera
 * A RESTful API accessible via HTTP GET request to the path `/strangler-microservice/v1/message` which responds with a simple JSON data structure containing the plain message text to be displayed. See the Java class `MessageController` in the Spring Boot application for the implementation of the controller.
 * A JavaScript file accessible at `/strangler-microservice/v1/js/strangler-web-components-1.0.0.js` containing a Vue.js component which attaches to the specific HTML element with the ID `strangler-message-component`. The component fetches the message via AJAX call to the RESTful API and displays it inside its own HTML structure. See the Vue.js file `src/StranglerMessageComponent.vue` in the web component project for the implementation.
 
-The microservice also provides a separate Stylesheet for the layout of the web components but that does not include any extra styling in our example.
-
 ==== The Monolith Part
 
 The monolith must implement two things to make use of the web component displaying the message:
 
-* The web page must include the JavaScript and Stylesheet provided by the microservice. That means it must load the following additional resources in the HTML document:
+* The web page must include the JavaScript file provided by the microservice. That means it must load the following additional script in the HTML document:
 +
 [source,html]
 ----
-<link rel="stylesheet" href="http://localhost:10081/strangler-microservice/v1/css/strangler-web-components-1.0.0.css" />
 <script src="http://localhost:10081/strangler-microservice/v1/js/strangler-web-components-1.0.0.js"></script>
 ----
 +
-In order not to block page loading we dynamically added those resources to the end of the page body:
+In order not to block page loading we dynamically added this resource to the end of the page body:
 +
 [source,html]
 ----
 <script>
-  // Non-blocking, deferred loading of the web components JavaScript and Stylesheet
+  // Non-blocking, deferred loading of the web components script
   var scriptElement = document.createElement('script');
   scriptElement.setAttribute('src', 'http://localhost:10081/strangler-microservice/v1/js/strangler-web-components-1.0.0.js');
   document.body.appendChild(scriptElement);
-  var linkElement = document.createElement('link');
-  linkElement.setAttribute('rel', 'stylesheet');
-  linkElement.setAttribute('href', 'http://localhost:10081/strangler-microservice/v1/css/strangler-web-components-1.0.0.css');
-  document.body.appendChild(linkElement);
 </script>
 ----
 * The web page must contain an element with the ID `strangler-message-component` and a special `data-` attribute defining the base URL of the microservice:
@@ -129,19 +122,20 @@ In order not to block page loading we dynamically added those resources to the e
 ----
 <div id="strangler-message-component"
      data-server-base-url="http://localhost:10081/strangler-microservice/v1">
+  <p>Loading message component...</p>
 </div>
 ----
 +
-This element defines the position in the page where the web component should appear. See the JSP template located at `src/main/webapp/WEB-INF/jsp/index.jsp` for the implementation.
+This element defines the position in the page where the web component should appear. It can contain arbitrary inner HTML to display as long as the component was not mounted to the document. See the JSP template located at `src/main/webapp/WEB-INF/jsp/index.jsp` for the implementation.
 
 ==== How Does It Work
 
 The procedure right from loading the monolith's web page until the appearance of the microservice's message is as follows:
 
 . The user requests the web page from the monolith. In our example by navigating to http://localhost:10080/
-. The user's browser executes the JavaScript at the end of the page body which adds two more resources to the HTML document - the JavaScript and Stylesheet provided by the microservice.
+. The user's browser executes the JavaScript at the end of the page body which adds a script reference to the HTML document - referring to the JavaScript provided by the microservice.
 . The user's browser loads and executes the JavaScript from the microservice.
-. The microservice's JavaScript looks for the element with ID `strangler-message-component` in the HTML document and mounts the Vue.js message component exactly where this element is.
+. The microservice's JavaScript looks for the element with ID `strangler-message-component` in the HTML document and mounts the Vue.js message component exactly where this element is. The special `data-` attribute on the root element is mapped to a component prop.
 . Once the Vue.js component has been plugged into the document it makes an AJAX request to the microservice's API endpoint `http://localhost:10081/strangler-microservice/v1/message`.
 . The microservice responds with a JSON data structure containing the message text.
 . The Vue.js component binds the received message to its own HTML structure, thus making it visible to the user.
@@ -152,7 +146,7 @@ In this showcase we go one step further to address a common problem when strangl
 
 * The content from the microservice is not relevant for search engines, i.e. it can be plugged into the page by JavaScript once the user has received the HTML document in the web browser.
 * The monolith uses a server-side session to store user-specific data. For example, as a result of a login procedure which might still be implemented in the monolith.
-* The monolith uses a cookie to track the session over multiple page requests.
+* The monolith uses a cookie to track the session over multiple page requests. But the session cookie is _HttpOnly_ making it inaccessible for client-side JavaScript code.
 * The microservice requires some data stored in the monolith's session to fulfill a certain functionality for that particular user. This might be simply obtaining the identity of the user.
 
 For this showcase the example monolith provides a form on its web page where the user can enter some personal data. When the form is submitted this user data is stored in the monolith's session. The microservice provides a greeting with that user data which should be displayed in the monolith's web page.
@@ -169,7 +163,7 @@ The microservice provides three things to enable integration of its user-specifi
 
 The monolith must implement three things to make use of the user-specific greeting from the microservice:
 
-* The web page must include the JavaScript and Stylesheet provided by the microservice. See previous showcase for example code.
+* The web page must include the JavaScript file provided by the microservice. See previous showcase for example code.
 * The web page must contain an element with the ID `strangler-greeting-component` and special `data-` attributes defining the base URL of the microservice as well as the name and value of the monolith's session cookie:
 +
 [source,html]
@@ -178,10 +172,11 @@ The monolith must implement three things to make use of the user-specific greeti
      data-server-base-url="http://localhost:10081/strangler-microservice/v1"
      data-monolith-session-cookie-name="MONOSID"
      data-monolith-session-cookie-value="${sessionId}">
+  <p>Loading greeting component...</p>
 </div>
 ----
 +
-This element defines the position in the page where the web component should appear. See the JSP template located at `src/main/webapp/WEB-INF/jsp/index.jsp` for the implementation.
+This element defines the position in the page where the web component should appear. It can contain arbitrary inner HTML to display as long as the component was not mounted to the document. See the JSP template located at `src/main/webapp/WEB-INF/jsp/index.jsp` for the implementation.
 * A RESTful API accessible via HTTP GET to the path `/user-data` which responds with a JSON data structure containing the user data for the session identified by a session cookie given in the request. See the Java classes `UserDataController` and `UserDataControllerAdvice` in the Spring Boot application for an example how to do that with Spring MVC.
 
 ==== How Does It Work
@@ -189,9 +184,9 @@ This element defines the position in the page where the web component should app
 The procedure right from loading the monolith's web page until the appearance of the microservice's greeting is as follows:
 
 . The user requests the web page from the monolith. In our example by navigating to http://localhost:10080/
-. The user's browser executes the JavaScript at the end of the page body which adds two more resources to the HTML document - the JavaScript and Stylesheet provided by the microservice.
+. The user's browser executes the JavaScript at the end of the page body which adds a script reference to the HTML document - referring to the JavaScript provided by the microservice.
 . The user's browser loads and executes the JavaScript from the microservice.
-. The microservice's JavaScript looks for the element with ID `strangler-greeting-component` in the HTML document and mounts the Vue.js greeting component exactly where this element is.
+. The microservice's JavaScript looks for the element with ID `strangler-greeting-component` in the HTML document and mounts the Vue.js greeting component exactly where this element is. The special `data-` attributes on the root element are mapped to component props.
 . Once the Vue.js component has been plugged into the document it makes an AJAX request to the microservice's API endpoint `http://localhost:10081/strangler-microservice/v1/greeting`. The component takes the name and value of the monolith's session cookie from its `data-` attributes and includes those values as additional HTTP headers in the request.
 . The microservice attempts to load the user data by calling the monolith's RESTful API endpoint `http://localhost:10080/user-data` with the session cookie constructed from the HTTP headers received with the AJAX request.
 . The monolith responds with a JSON data structure containing the user data for the session addressed by the session cookie.
@@ -206,7 +201,7 @@ We demonstrated how to include standalone functionality which the microservice c
 
 The web components could be integrated into the monolith's web page without any big effort on the monolith side. We also demonstrated that page loading does not get obstructed when the microservice's resources should be unavailable for some reason.
 
-The presented techniques can only be used to enhance the web page with content that is not SEO-relevant, i.e. does not need to be visible for search engines. If content from the microservice must be accessible for crawlers a server-side page composition mechanism must be used (e.g. server-side includes at a reverse proxy in front of the monolith).
+The presented techniques can only be used to enhance the web page with content that is not SEO-relevant, i.e. does not need to be visible for search engines. If content from the microservice must be accessible for crawlers a server-side page composition mechanism must be used (e.g. server-side includes at a reverse proxy in front of the monolith or prerendering of the web components).
 
 Accessing the user's session in the monolith directly from the microservice is essentially session hijacking. This may be considered bad practice and in a perfect world there are more elegant ways to get the user's identity (e.g. JWT via OAuth 2.0). Nevertheless, as an intermediate solution there may be the necessity to retrieve session-specific data from the monolith that goes beyond the simple user identity. Finally, making use of the cookie-based session tracking keeps implementation efforts low on the monolith side.
 
