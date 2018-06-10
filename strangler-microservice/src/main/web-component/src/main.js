@@ -1,35 +1,25 @@
-import Vue from 'vue';
-import StranglerMessageComponent from './StranglerMessageComponent';
-import StranglerGreetingComponent from './StranglerGreetingComponent';
+import Vue from 'vue'
+import StranglerMessageComponent from './StranglerMessageComponent.vue'
+import StranglerGreetingComponent from './StranglerGreetingComponent.vue'
 
-Vue.config.productionTip = false;
+Vue.config.productionTip = false
 
-// Create the message component
-const messageElement = document.querySelector('#strangler-message-component');
-if (messageElement) {
-  /* eslint-disable no-new */
+const messageComponent = document.querySelector('#strangler-message-component')
+if (messageComponent) {
   new Vue({
-    el: messageElement,
+    el: messageComponent,
     render: h => h(StranglerMessageComponent, {
-      props: {
-        serverBaseUrl: messageElement.dataset.serverBaseUrl,
-      },
-    }),
-  });
+      props: { ...messageComponent.dataset }
+    })
+  })
 }
 
-// Create the greeting component
-const greetingElement = document.querySelector('#strangler-greeting-component');
-if (greetingElement) {
-  /* eslint-disable no-new */
+const greetingComponent = document.querySelector('#strangler-greeting-component')
+if (greetingComponent) {
   new Vue({
-    el: greetingElement,
+    el: greetingComponent,
     render: h => h(StranglerGreetingComponent, {
-      props: {
-        serverBaseUrl: greetingElement.dataset.serverBaseUrl,
-        monolithSessionCookieName: greetingElement.dataset.monolithSessionCookieName,
-        monolithSessionCookieValue: greetingElement.dataset.monolithSessionCookieValue,
-      },
-    }),
-  });
+      props: { ...greetingComponent.dataset }
+    })
+  })
 }

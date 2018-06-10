@@ -40,7 +40,7 @@
               <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${project.basedir}/src/main/web-component/dist/static</directory>
+                  <directory>${project.basedir}/src/main/web-component/dist</directory>
                   <excludes>
                     <exclude>index.html</exclude>
                   </excludes>

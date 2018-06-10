@@ -49,6 +49,7 @@
           <!-- Message Component provided by the microservice -->
           <div id="strangler-message-component"
                data-server-base-url="http://localhost:10081/strangler-microservice/v1">
+            <p>Loading message component...</p>
           </div>
         </div>
         <div class="col-sm">
@@ -57,20 +58,17 @@
                data-server-base-url="http://localhost:10081/strangler-microservice/v1"
                data-monolith-session-cookie-name="MONOSID"
                data-monolith-session-cookie-value="${sessionId}">
+            <p>Loading greeting component...</p>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      // Non-blocking, deferred loading of the web components JavaScript and Stylesheet
+      // Non-blocking, deferred loading of the web components bundle
       var scriptElement = document.createElement('script');
       scriptElement.setAttribute('src', 'http://localhost:10081/strangler-microservice/v1/js/strangler-web-components-1.0.0.js');
       document.body.appendChild(scriptElement);
-      var linkElement = document.createElement('link');
-      linkElement.setAttribute('rel', 'stylesheet');
-      linkElement.setAttribute('href', 'http://localhost:10081/strangler-microservice/v1/css/strangler-web-components-1.0.0.css');
-      document.body.appendChild(linkElement);
     </script>
   </body>
 </html>
